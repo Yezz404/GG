@@ -1,158 +1,788 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>聊天記錄</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <style>
-    body {
-      margin: 0;
-      font-family: "Segoe UI", sans-serif;
-      display: flex;
-      height: 100vh;
-      overflow: hidden;
-      background-color: #fff0f5;
-    }
-    #sidebar {
-      width: 300px;
-      background-color: #ffe4e1;
-      overflow-y: auto;
-      border-right: 1px solid #ccc;
-      padding: 10px;
-    }
-    #main {
-      flex-grow: 1;
-      overflow-y: auto;
-      padding: 20px;
-      background-color: #fff5f8;
-    }
-    .conversation {
-      cursor: pointer;
-      padding: 10px;
-      border-bottom: 1px solid #ccc;
-    }
-    .conversation:hover {
-      background-color: #ffd2d2;
-    }
-    .timestamp {
-      font-size: 0.8em;
-      color: #666;
-    }
-    .message {
-      margin-bottom: 10px;
-      padding: 10px;
-      border-radius: 8px;
-      white-space: pre-wrap;
-    }
-    .user {
-      background-color: #ffdee0;
-      align-self: flex-end;
-    }
-    .assistant {
-      background-color: #e0ffff;
-      align-self: flex-start;
-    }
-    .chat-box {
-      display: flex;
-      flex-direction: column;
-    }
-    /* Custom scrollbar */
-    #sidebar::-webkit-scrollbar, #main::-webkit-scrollbar {
-      width: 10px;
-    }
-    #sidebar::-webkit-scrollbar-track, #main::-webkit-scrollbar-track {
-      background: #ffe4e1;
-    }
-    #sidebar::-webkit-scrollbar-thumb, #main::-webkit-scrollbar-thumb {
-      background-color: #ff69b4;
-      border-radius: 5px;
-    }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>聊天記錄 — Chat Export Viewer</title>
+
+<!-- Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@2.5.3/dist/purify.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<style>
+:root{
+  --bg: #fff7f6;
+  --panel: #fff;
+  --muted: #7b6b6b;
+  --accent: #ffe4e1;
+  --accent-2: #ffd2d2;
+  --text: #222;
+  --scroll-thumb: #ff6f8a;
+  --code-bg: #0d1117;
+}
+.dark {
+  --bg: #0b0b0c;
+  --panel: #0f1113;
+  --muted: #9aa3b2;
+  --accent: #1a1a1c;
+  --accent-2: #2b2b2d;
+  --text: #e6eef6;
+  --scroll-thumb: #ff8fa3;
+  --code-bg: #0b0b0b;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:Inter, "Segoe UI", Roboto, Arial;}
+.app{display:flex;height:100vh;gap:14px;padding:14px}
+.sidebar{width:340px;background:var(--panel);border-radius:12px;padding:12px;box-shadow:0 8px 24px rgba(0,0,0,0.06);display:flex;flex-direction:column}
+.header{display:flex;align-items:center;gap:12px}
+.logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-weight:700}
+.h1{font-weight:700;font-size:16px}
+.controls{display:flex;gap:8px;align-items:center;margin-top:10px}
+.btn{background:var(--accent-2);border:none;padding:8px 10px;border-radius:8px;cursor:pointer;font-weight:600}
+.btn.ghost{background:transparent;border:1px solid rgba(0,0,0,0.06)}
+.input-file{display:none}
+.searchbar{margin-top:10px;background:var(--panel);padding:8px;border-radius:10px;border:1px solid rgba(0,0,0,0.04);display:flex;gap:8px;align-items:center}
+.searchbar input{border:0;background:transparent;outline:none;width:100%;color:var(--text)}
+.side-list{margin-top:10px;overflow:auto;padding-right:6px;flex:1}
+.conv-item{display:flex;gap:8px;align-items:flex-start;padding:10px;border-radius:10px;cursor:pointer;border:1px solid transparent}
+.conv-item:hover{background:linear-gradient(90deg, rgba(255,240,240,0.6), transparent)}
+.conv-item.selected{border-color:rgba(0,0,0,0.06);background:linear-gradient(90deg, rgba(255,240,240,0.4), transparent)}
+.conv-meta{flex:1}
+.conv-title{font-weight:700}
+.conv-sub{font-size:12px;color:var(--muted);margin-top:6px}
+.side-bottom{padding-top:8px;font-size:13px;color:var(--muted)}
+
+.main{flex:1;display:flex;flex-direction:column}
+.panel{background:var(--panel);border-radius:12px;padding:12px;box-shadow:0 8px 24px rgba(0,0,0,0.06);display:flex;flex-direction:column;gap:12px;flex:1;overflow:hidden}
+.toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.toolbar-left{display:flex;gap:8px;align-items:center}
+.title{font-weight:700}
+.toolbar-right{display:flex;gap:8px;align-items:center}
+.chat-area{flex:1;overflow:auto;padding:10px;border-radius:8px;background:linear-gradient(180deg, transparent, rgba(0,0,0,0.02))}
+.chat-list{display:flex;flex-direction:column;gap:10px;padding-bottom:80px}
+.msg{max-width:80%;padding:12px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.04);white-space:pre-wrap}
+.msg.user{align-self:flex-end;background:#fff}
+.msg.assistant{align-self:flex-start;background:linear-gradient(180deg,#fff9f0,#fff5ee)}
+.msg time{display:block;font-size:12px;color:var(--muted);margin-bottom:8px}
+.msg-controls{display:flex;gap:8px;margin-top:8px}
+.small-btn{padding:6px 8px;border-radius:8px;border:1px solid rgba(0,0,0,0.06);background:transparent;cursor:pointer;font-size:13px}
+
+/* code block */
+pre code{display:block;background:var(--code-bg);color:#f8f8f2;padding:12px;border-radius:8px;overflow:auto;white-space:pre-wrap;word-break:break-word;}
+
+/* scrollbar - visible pink in light mode; different color in dark */
+.sidebar::-webkit-scrollbar, .chat-area::-webkit-scrollbar, .side-list::-webkit-scrollbar {width:12px;height:12px}
+.sidebar::-webkit-scrollbar-track, .chat-area::-webkit-scrollbar-track {background:var(--accent)}
+.sidebar::-webkit-scrollbar-thumb, .chat-area::-webkit-scrollbar-thumb {background:var(--scroll-thumb);border-radius:8px}
+
+/* floats */
+.floats{position:fixed;right:20px;bottom:20px;display:flex;flex-direction:column;gap:8px}
+.floats button{padding:10px;border-radius:999px;border:none;background:var(--accent-2);cursor:pointer}
+
+/* responsive */
+@media (max-width:900px){
+  .sidebar{display:none}
+  .app{padding:8px}
+}
+</style>
 </head>
 <body>
-  <div id="sidebar">
-    <input type="file" id="fileInput" webkitdirectory directory multiple />
-    <div id="conversationsList"></div>
+<div class="app" id="app">
+  <div class="sidebar" role="navigation" aria-label="Conversations sidebar">
+    <div class="header">
+      <div class="logo">聊</div>
+      <div>
+        <div class="h1">聊天記錄</div>
+        <div style="font-size:12px;color:var(--muted)">Upload folder with conversations.json</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <label class="btn">Upload folder
+        <input class="input-file" id="folderInput" type="file" webkitdirectory multiple aria-label="Upload exported folder" />
+      </label>
+      <button class="btn ghost" id="exportSelectedZip">Export ZIP</button>
+    </div>
+
+    <div class="searchbar" style="margin-top:8px">
+      <input id="globalSearch" placeholder="Search titles & messages..." />
+      <select id="sortSelect" title="Sort">
+        <option value="newest">Newest</option>
+        <option value="oldest">Oldest</option>
+        <option value="az">A → Z</option>
+        <option value="za">Z → A</option>
+      </select>
+    </div>
+
+    <div class="side-list" id="conversationsList" aria-live="polite">
+      <div style="color:var(--muted);padding:12px">No folder loaded. Choose exported folder above.</div>
+    </div>
+
+    <div class="side-bottom" id="summaryStats">No data loaded.</div>
   </div>
-  <div id="main">
-    <h2>請選擇一個對話查看</h2>
-    <div id="chatContainer" class="chat-box"></div>
+
+  <div class="main">
+    <div class="panel">
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <div class="title" id="convTitle">Please upload folder</div>
+          <div style="margin-left:6px;color:var(--muted)" id="convSubtitle"></div>
+        </div>
+
+        <div class="toolbar-right">
+          <input id="fileViewToggle" type="checkbox" /> <label for="fileViewToggle" style="font-size:13px">Render attachments inline</label>
+          <button class="btn" id="downloadTxtBtn">Export TXT</button>
+          <button class="btn" id="downloadPdfBtn">Export PDF</button>
+          <button class="btn ghost" id="copyConvBtn">Copy</button>
+          <button class="btn" id="toggleTheme">Dark</button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;align-items:center;">
+        <div style="font-size:13px;color:var(--muted)">Display:</div>
+        <select id="displayMode">
+          <option value="chat">Chat bubbles</option>
+          <option value="plain">Plain text</option>
+        </select>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <input id="searchInConv" placeholder="Search in conversation" />
+          <button class="small-btn" id="searchPrev">◀️</button>
+          <button class="small-btn" id="searchNext">▶️</button>
+        </div>
+      </div>
+
+      <div class="chat-area" id="chatArea" tabindex="0" aria-live="polite">
+        <div class="chat-list" id="chatList">
+          <div style="color:var(--muted)">No conversation selected.</div>
+        </div>
+      </div>
+    </div>
   </div>
-  <script>
-    window.chatData = window.chatData || {};
-    if (!window.chatData.allConversations) {
-      window.chatData.allConversations = [];
+</div>
+
+<div class="floats">
+  <button id="toTopBtn">⬆️</button>
+  <button id="toBottomBtn">⬇️</button>
+</div>
+
+<script>
+/* App namespace - avoid duplicate globals */
+window.app = window.app || {};
+const app = window.app;
+
+/* Safe globals */
+app.fileMap = app.fileMap || new Map();
+app.conversations = app.conversations || [];
+app.currentIndex = (typeof app.currentIndex === 'number') ? app.currentIndex : -1;
+app.searchMatches = [];
+app.activeMatchIndex = -1;
+
+/* DOM refs */
+const folderInput = document.getElementById('folderInput');
+const conversationsList = document.getElementById('conversationsList');
+const convTitle = document.getElementById('convTitle');
+const convSubtitle = document.getElementById('convSubtitle');
+const chatList = document.getElementById('chatList');
+const chatArea = document.getElementById('chatArea');
+const summaryStats = document.getElementById('summaryStats');
+const globalSearch = document.getElementById('globalSearch');
+const sortSelect = document.getElementById('sortSelect');
+const exportSelectedZip = document.getElementById('exportSelectedZip');
+const fileViewToggle = document.getElementById('fileViewToggle');
+const downloadTxtBtn = document.getElementById('downloadTxtBtn');
+const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+const copyConvBtn = document.getElementById('copyConvBtn');
+const toggleThemeBtn = document.getElementById('toggleTheme');
+const displayMode = document.getElementById('displayMode');
+const searchInConv = document.getElementById('searchInConv');
+const searchPrev = document.getElementById('searchPrev');
+const searchNext = document.getElementById('searchNext');
+const toTopBtn = document.getElementById('toTopBtn');
+const toBottomBtn = document.getElementById('toBottomBtn');
+
+/* Helpers */
+function fmtTime(ts){
+  if(!ts) return '';
+  let d;
+  if(typeof ts === 'number') d = new Date(ts * (String(ts).length === 10 ? 1000 : 1));
+  else d = new Date(ts);
+  if(isNaN(d)) return String(ts);
+  const pad = n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+}
+
+/* Safe markdown render */
+marked.setOptions({gfm:true,breaks:true});
+function renderMarkdown(md){
+  const raw = marked.parse(md || '');
+  return DOMPurify.sanitize(raw, {ADD_ATTR:['target']});
+}
+
+/* Estimate tokens (approx) */
+function estimateTokens(text){
+  if(!text) return 0;
+  return Math.ceil(text.length/4);
+}
+
+/* File map builder */
+function buildFileMap(files){
+  app.fileMap.clear();
+  for(const f of files){
+    app.fileMap.set(f.webkitRelativePath || f.name, f);
+    app.fileMap.set(f.name, f);
+    // also store normalized lower-case
+    app.fileMap.set((f.webkitRelativePath || f.name).toLowerCase(), f);
+    app.fileMap.set(f.name.toLowerCase(), f);
+  }
+}
+
+/* Find attachment file by id-name or by name */
+function findAttachmentFile(id, name){
+  if(!name && !id) return null;
+  const target1 = `${id}-${name}`;
+  if(app.fileMap.has(target1)) return app.fileMap.get(target1);
+  if(app.fileMap.has(target1.toLowerCase())) return app.fileMap.get(target1.toLowerCase());
+  if(app.fileMap.has(name)) return app.fileMap.get(name);
+  if(app.fileMap.has(name.toLowerCase())) return app.fileMap.get(name.toLowerCase());
+  // sometimes file stored under 'attachments/<id>-<name>'
+  for(const key of app.fileMap.keys()){
+    if(key.endsWith('/'+target1) || key.endsWith('\\'+target1) || key.endsWith('/'+name) || key.endsWith('\\'+name)) return app.fileMap.get(key);
+  }
+  return null;
+}
+
+/* Normalize conversation into {id,title,messages:[{role,content,create_time,attachments}] } */
+function normalizeConversation(raw, idx){
+  const conv = { id: raw.id || raw.conversation_id || raw.key || idx, title: raw.title || raw.name || (raw.metadata && raw.metadata.title) || ('Conversation '+(idx+1)), messages: [] };
+
+  // Case 1: mapping object used by many exports: conv.mapping -> { <key>: { id, message: {...} } }
+  if(raw.mapping && typeof raw.mapping === 'object'){
+    for(const entry of Object.values(raw.mapping)){
+      const m = entry.message || entry;
+      const role = m.role || (m.author && m.author.role) || '';
+      const content = extractContent(m);
+      const create_time = m.create_time || m.create_time_ms || m.timestamp || (m.create_time ? m.create_time : null);
+      const attachments = (m.attachments || []).map(a=>({id:a.id||a.file_id||a.name, name: a.name||a.filename||a.file_name}));
+      conv.messages.push({role, content, create_time, attachments});
     }
+  }
 
-    document.getElementById("fileInput").addEventListener("change", handleFiles);
+  // Case 2: messages array (older/newer)
+  else if(Array.isArray(raw.messages) && raw.messages.length){
+    for(const m of raw.messages){
+      // Some messages nested: m.message or m
+      const msg = m.message || m;
+      const role = msg.role || (msg.author && msg.author.role) || '';
+      const content = extractContent(msg);
+      const create_time = msg.create_time || msg.create_time_ms || msg.timestamp || msg.created_at || msg.time;
+      const attachments = (msg.attachments || []).map(a=>({id:a.id||a.file_id||a.name, name: a.name||a.filename||a.file_name}));
+      conv.messages.push({role, content, create_time, attachments});
+    }
+  }
 
-    function handleFiles(event) {
-      const files = event.target.files;
-      const folder = {};
-      for (const file of files) {
-        folder[file.webkitRelativePath] = file;
+  // Case 3: new format possible structure: raw.items or raw.conversation_parts
+  else if(Array.isArray(raw.items) && raw.items.length){
+    for(const item of raw.items){
+      const m = item;
+      const role = (m.role || (m.author && m.author.role) || m.type || '').toLowerCase();
+      const content = extractContent(m);
+      const create_time = m.create_time || m.timestamp || m.time;
+      const attachments = (m.attachments || []).map(a=>({id:a.id||a.file_id||a.name, name:a.name||a.filename||a.file_name}));
+      conv.messages.push({role, content, create_time, attachments});
+    }
+  }
+
+  // Case 4: raw may already be a simpler shape: raw.message or raw.content
+  else if(raw.message || raw.content){
+    const msg = raw.message || raw;
+    const role = msg.role || (msg.author && msg.author.role) || '';
+    const content = extractContent(msg);
+    const create_time = msg.create_time || msg.timestamp || raw.updatedAt || raw.create_time;
+    const attachments = (msg.attachments || []).map(a=>({id:a.id||a.file_id||a.name, name:a.name||a.filename||a.file_name}));
+    conv.messages.push({role, content, create_time, attachments});
+  }
+
+  // last resort: if raw has top-level text field
+  else if(raw.text){
+    conv.messages.push({role:'assistant', content:String(raw.text), create_time:raw.create_time || raw.updatedAt || null, attachments:[]});
+  }
+
+  // Clean messages: flatten content types and filter empties
+  conv.messages = conv.messages
+    .map(m => ({ role: String(m.role || '').toLowerCase(), content: normalizeContent(m.content), create_time: m.create_time, attachments: m.attachments || [] }))
+    .filter(m => (m.role === 'user' || m.role === 'assistant') && m.content && String(m.content).trim() !== '');
+
+  return conv;
+}
+
+/* Extract content from various shapes */
+function extractContent(msg){
+  if(!msg) return '';
+  // If content is string
+  if(typeof msg.content === 'string') return msg.content;
+  // If message.content.parts (ChatGPT export)
+  if(msg.content && Array.isArray(msg.content.parts)) return msg.content.parts.join('\n');
+  // If msg.content is object with 'text' or 'parts'
+  if(msg?.content?.text) return Array.isArray(msg.content.text) ? msg.content.text.join('\n') : msg.content.text;
+  // old format: msg.text or msg.message or msg.content
+  if(msg.text) return (typeof msg.text === 'string') ? msg.text : (Array.isArray(msg.text) ? msg.text.join('\n') : JSON.stringify(msg.text));
+  if(msg.message && msg.message.content && Array.isArray(msg.message.content.parts)) return msg.message.content.parts.join('\n');
+  // fallback to JSON.stringify (last resort)
+  try { return JSON.stringify(msg.content || msg); } catch(e){ return String(msg.content || ''); }
+}
+
+/* Normalize content to string */
+function normalizeContent(c){
+  if(c === null || c === undefined) return '';
+  if(typeof c === 'string') return c;
+  if(Array.isArray(c)) return c.join('\n');
+  try{ return JSON.stringify(c); }catch(e){return String(c);}
+}
+
+/* Load folder event */
+folderInput.addEventListener('change', async (e)=>{
+  const files = Array.from(e.target.files || []);
+  if(files.length === 0) return;
+  buildFileMap(files);
+
+  // Find conversations.json (case-insensitive)
+  let convFile = files.find(f => f.name.toLowerCase() === 'conversations.json' || f.webkitRelativePath.toLowerCase().endsWith('conversations.json'));
+  if(!convFile){
+    alert('Cannot find conversations.json in the selected folder. Please upload the folder exported by OpenAI.');
+    return;
+  }
+
+  try{
+    const txt = await convFile.text();
+    const parsed = JSON.parse(txt);
+    const rawList = Array.isArray(parsed) ? parsed : (parsed.items || parsed.conversations || parsed.data?.items || []);
+    if(!Array.isArray(rawList)){
+      alert('Could not parse conversations.json: unknown format.');
+      return;
+    }
+    // normalize all
+    app.conversations = rawList.map((r,i)=> normalizeConversation(r,i));
+    // build additional metadata
+    app.conversations.forEach((c,i)=> {
+      c._internalIndex = i;
+      c.stats = computeStats(c);
+      c.lastTime = c.messages.length ? c.messages[c.messages.length-1].create_time : null;
+    });
+    renderConversationList();
+    updateSummary();
+  }catch(err){
+    console.error(err);
+    alert('Error reading conversations.json: ' + (err.message || err));
+  }
+});
+
+/* Compute stats */
+function computeStats(conv){
+  let chars=0, tokens=0, userCount=0, assistantCount=0;
+  for(const m of conv.messages){
+    const text = m.content || '';
+    chars += text.length;
+    tokens += estimateTokens(text);
+    if(m.role === 'user') userCount++; else if(m.role === 'assistant') assistantCount++;
+  }
+  return {chars, tokens, userCount, assistantCount};
+}
+
+/* Render conversation list */
+function renderConversationList(){
+  conversationsList.innerHTML = '';
+  const q = globalSearch.value.trim().toLowerCase();
+  let items = app.conversations.slice();
+  // filter by search (title or messages)
+  if(q){
+    items = items.filter(conv=>{
+      if((conv.title || '').toLowerCase().includes(q)) return true;
+      for(const m of conv.messages){
+        if((m.content || '').toLowerCase().includes(q)) return true;
       }
+      return false;
+    });
+  }
+  // sort
+  const s = sortSelect.value;
+  items.sort((a,b)=>{
+    if(s === 'newest') return (b.lastTime || 0) - (a.lastTime || 0);
+    if(s === 'oldest') return (a.lastTime || 0) - (b.lastTime || 0);
+    if(s === 'az') return (''+ (a.title||'') ).localeCompare(''+(b.title||''));
+    if(s === 'za') return (''+ (b.title||'') ).localeCompare(''+(a.title||''));
+    return 0;
+  });
 
-      const jsonFile = Object.values(folder).find(file => file.name === "conversations.json");
-      if (!jsonFile) return alert("conversations.json 未找到");
+  if(items.length === 0){
+    conversationsList.innerHTML = '<div style="padding:12px;color:var(--muted)">No conversations found.</div>';
+    return;
+  }
 
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        try {
-          const json = JSON.parse(e.target.result);
-          window.chatData.allConversations = json;
-          populateConversationList(json);
-        } catch (err) {
-          alert("JSON 解析錯誤");
+  items.forEach((conv)=>{
+    const el = document.createElement('div');
+    el.className = 'conv-item';
+    el.dataset.index = conv._internalIndex;
+    if(conv._internalIndex === app.currentIndex) el.classList.add('selected');
+
+    const meta = document.createElement('div');
+    meta.className = 'conv-meta';
+    const title = document.createElement('div'); title.className='conv-title'; title.textContent = conv.title;
+    const sub = document.createElement('div'); sub.className='conv-sub';
+    sub.textContent = conv.lastTime ? fmtTime(conv.lastTime) : `messages ${conv.messages.length}`;
+
+    const stats = document.createElement('div'); stats.style.fontSize='12px'; stats.style.color='var(--muted)';
+    stats.textContent = `${conv.stats.chars} chars • AI ${conv.stats.assistantCount} • User ${conv.stats.userCount} • est ${conv.stats.tokens} tokens`;
+
+    meta.appendChild(title); meta.appendChild(sub); meta.appendChild(stats);
+
+    const cb = document.createElement('input'); cb.type='checkbox'; cb.style.marginRight='8px';
+    cb.addEventListener('change',(e)=>{
+      if(e.target.checked) app._selected = app._selected || new Set(), app._selected.add(conv._internalIndex);
+      else app._selected && app._selected.delete(conv._internalIndex);
+    });
+
+    el.appendChild(cb); el.appendChild(meta);
+
+    el.addEventListener('click',(e)=>{
+      if(e.target.tagName === 'INPUT') return;
+      document.querySelectorAll('.conv-item').forEach(x=>x.classList.remove('selected'));
+      el.classList.add('selected');
+      showConversation(conv._internalIndex);
+    });
+
+    conversationsList.appendChild(el);
+  });
+}
+
+/* Show conversation by index */
+function showConversation(index){
+  const conv = app.conversations[index];
+  if(!conv) return;
+  app.currentIndex = index;
+  convTitle.textContent = conv.title;
+  convSubtitle.textContent = conv.messages.length ? fmtTime(conv.messages[0].create_time) : '';
+  renderConversation(conv);
+}
+
+/* Render conversation detail */
+function renderConversation(conv){
+  chatList.innerHTML = '';
+  if(conv.messages.length === 0){
+    chatList.innerHTML = '<div style="color:var(--muted)">No user/assistant messages in this conversation.</div>';
+    return;
+  }
+
+  if(displayMode.value === 'plain'){
+    // Plain text view
+    const pre = document.createElement('pre');
+    pre.style.whiteSpace='pre-wrap';
+    pre.style.maxHeight='70vh';
+    pre.style.overflow='auto';
+    let out = '';
+    for(const m of conv.messages){
+      const ts = fmtTime(m.create_time);
+      out += `[${ts}] ${m.role.toUpperCase()}:\n${m.content}\n\n`;
+    }
+    pre.textContent = out;
+    chatList.appendChild(pre);
+    return;
+  }
+
+  // Chat bubbles
+  for(const m of conv.messages){
+    const wrapper = document.createElement('div');
+    const cls = 'msg ' + (m.role === 'user' ? 'user' : 'assistant');
+    wrapper.className = 'msg ' + (m.role === 'user' ? 'user' : 'assistant');
+
+    // attachments first (for user)
+    if(m.attachments && m.attachments.length){
+      for(const a of m.attachments){
+        const f = findAttachmentFile(a.id, a.name);
+        if(f){
+          const url = URL.createObjectURL(f);
+          if(f.type && f.type.startsWith('image/')){
+            const img = document.createElement('img');
+            img.src = url;
+            img.style.maxWidth='420px';
+            img.style.borderRadius='8px';
+            img.style.display='block';
+            img.style.marginBottom='8px';
+            if(fileViewToggle.checked) wrapper.appendChild(img);
+            else {
+              const link = document.createElement('a'); link.href=url; link.target='_blank'; link.textContent = 'View attachment: '+(a.name||f.name);
+              wrapper.appendChild(link);
+            }
+          } else {
+            const link = document.createElement('a'); link.href = url; link.download = f.name; link.textContent = 'Download attachment: '+(a.name||f.name); link.style.display='block';
+            wrapper.appendChild(link);
+          }
+        } else {
+          const p = document.createElement('div'); p.style.fontSize='13px'; p.style.color='var(--muted)'; p.textContent = 'Attachment: ' + (a.name || '(unknown)');
+          wrapper.appendChild(p);
         }
-      };
-      reader.readAsText(jsonFile);
-    }
-
-    function populateConversationList(conversations) {
-      const list = document.getElementById("conversationsList");
-      list.innerHTML = "";
-      conversations.forEach((conv, index) => {
-        const messages = conv.mapping ? Object.values(conv.mapping).map(m => m.message).filter(Boolean) : [];
-        const title = conv.title || `對話 ${index + 1}`;
-        const firstMsg = messages.find(m => m.create_time);
-        const timeStr = firstMsg ? formatDate(firstMsg.create_time * 1000) : "未知時間";
-
-        const div = document.createElement("div");
-        div.className = "conversation";
-        div.innerHTML = `<strong>${title}</strong><div class="timestamp">${timeStr}</div>`;
-        div.onclick = () => showConversation(messages);
-        list.appendChild(div);
-      });
-    }
-
-    function showConversation(messages) {
-      const chatContainer = document.getElementById("chatContainer");
-      chatContainer.innerHTML = "";
-      const userAssistantMsgs = messages.filter(m => (m.author.role === "user" || m.author.role === "assistant") && m.content?.parts?.[0]);
-
-      if (userAssistantMsgs.length === 0) {
-        chatContainer.innerHTML = "<p>No user/assistant messages to display in this conversation.</p>";
-        return;
       }
-
-      userAssistantMsgs.forEach(msg => {
-        const div = document.createElement("div");
-        div.className = `message ${msg.author.role}`;
-        const timestamp = formatDate(msg.create_time * 1000);
-        const content = marked.parse(msg.content.parts[0]);
-        div.innerHTML = `<div class="timestamp">${timestamp}</div>${content}`;
-        chatContainer.appendChild(div);
-      });
     }
 
-    function formatDate(timestamp) {
-      const d = new Date(timestamp);
-      return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')} ` +
-             `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}`;
+    const timeEl = document.createElement('time');
+    timeEl.textContent = fmtTime(m.create_time);
+    wrapper.appendChild(timeEl);
+
+    // content - render markdown and sanitize
+    const html = renderMarkdown(m.content || '');
+    const body = document.createElement('div');
+    body.className = 'msg-body';
+    body.innerHTML = html;
+    wrapper.appendChild(body);
+
+    // message controls
+    const ctr = document.createElement('div');
+    ctr.className = 'msg-controls';
+    const cpy = document.createElement('button'); cpy.className='small-btn'; cpy.textContent='Copy';
+    cpy.addEventListener('click', ()=> {
+      navigator.clipboard.writeText(m.content || '').then(()=> { cpy.textContent='Copied'; setTimeout(()=>cpy.textContent='Copy',900); }).catch(()=>alert('Copy failed'));
+    });
+
+    const rawBtn = document.createElement('button'); rawBtn.className='small-btn'; rawBtn.textContent='Download raw';
+    rawBtn.addEventListener('click', ()=> {
+      const blob = new Blob([m.content||''], {type:'text/plain;charset=utf-8'});
+      saveAs(blob, (conv.title || 'conversation') + '-msg-' + (conv.messages.indexOf(m)+1) + '.txt');
+    });
+
+    const codeBtn = document.createElement('button'); codeBtn.className='small-btn'; codeBtn.textContent='Download code blocks';
+    codeBtn.addEventListener('click', ()=>{
+      const blocks = Array.from(body.querySelectorAll('pre code')).map(x=> x.textContent || '');
+      if(blocks.length === 0) return alert('No code blocks found');
+      const zip = new JSZip();
+      blocks.forEach((b,i)=> zip.file(`code-${i+1}.txt`, b));
+      zip.generateAsync({type:'blob'}).then(b=> saveAs(b, (conv.title||'conversation') + '-codeblocks.zip'));
+    });
+
+    // download html-only of message body
+    const htmlOnlyBtn = document.createElement('button'); htmlOnlyBtn.className='small-btn'; htmlOnlyBtn.textContent='Download HTML';
+    htmlOnlyBtn.addEventListener('click', ()=>{
+      const htmlText = body.innerHTML;
+      const blob = new Blob([htmlText], {type:'text/html;charset=utf-8'});
+      saveAs(blob, (conv.title || 'conversation') + '-msg-' + (conv.messages.indexOf(m)+1) + '.html');
+    });
+
+    ctr.appendChild(cpy); ctr.appendChild(rawBtn); ctr.appendChild(codeBtn); ctr.appendChild(htmlOnlyBtn);
+    wrapper.appendChild(ctr);
+
+    chatList.appendChild(wrapper);
+  }
+
+  // syntax highlight code blocks
+  chatList.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+
+  // after render, run in-conversation search highlight if any
+  highlightSearchInConversation();
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+/* Export conversation to plain text */
+function conversationToPlainText(conv){
+  let out = '';
+  for(const m of conv.messages){
+    out += `[${fmtTime(m.create_time)}] ${m.role.toUpperCase()}:\n${m.content}\n\n`;
+  }
+  return out;
+}
+
+/* Buttons */
+downloadTxtBtn.addEventListener('click', ()=>{
+  if(app.currentIndex < 0) return alert('No conversation selected');
+  const conv = app.conversations[app.currentIndex];
+  const blob = new Blob([conversationToPlainText(conv)], {type:'text/plain;charset=utf-8'});
+  saveAs(blob, (conv.title || 'conversation') + '.txt');
+});
+
+downloadPdfBtn.addEventListener('click', async ()=>{
+  if(app.currentIndex < 0) return alert('No conversation selected');
+  const conv = app.conversations[app.currentIndex];
+  await exportConversationToPDF(conv);
+});
+
+copyConvBtn.addEventListener('click', ()=>{
+  if(app.currentIndex < 0) return alert('No conversation selected');
+  const conv = app.conversations[app.currentIndex];
+  navigator.clipboard.writeText(conversationToPlainText(conv)).then(()=> {
+    copyConvBtn.textContent = 'Copied'; setTimeout(()=>copyConvBtn.textContent='Copy',900);
+  });
+});
+
+toggleThemeBtn.addEventListener('click', ()=>{
+  document.documentElement.classList.toggle('dark');
+  toggleThemeBtn.textContent = document.documentElement.classList.contains('dark') ? 'Light' : 'Dark';
+});
+
+/* Batch export selected */
+exportSelectedZip.addEventListener('click', async ()=>{
+  const sel = app._selected ? Array.from(app._selected) : [];
+  if(!sel.length) return alert('No conversations selected (use checkboxes).');
+  const zip = new JSZip();
+  for(const idx of sel){
+    const conv = app.conversations[idx];
+    zip.file((conv.title||('conversation-'+idx))+'.txt', conversationToPlainText(conv));
+    // include attachments used
+    for(const m of conv.messages){
+      for(const a of m.attachments || []){
+        const f = findAttachmentFile(a.id, a.name);
+        if(f){
+          const buf = await f.arrayBuffer();
+          zip.file('attachments/'+f.name, buf);
+        }
+      }
     }
-  </script>
+  }
+  const blob = await zip.generateAsync({type:'blob'});
+  saveAs(blob, 'conversations-export.zip');
+});
+
+/* Search handlers */
+globalSearch.addEventListener('input', ()=> renderConversationList());
+sortSelect.addEventListener('change', ()=> renderConversationList());
+
+/* In-conversation search */
+searchInConv.addEventListener('input', ()=> highlightSearchInConversation());
+searchPrev.addEventListener('click', ()=> navigateMatch(-1));
+searchNext.addEventListener('click', ()=> navigateMatch(1));
+
+function clearHighlights(container=document){
+  container.querySelectorAll('mark.app-match').forEach(m=>{
+    const t = document.createTextNode(m.textContent);
+    m.replaceWith(t);
+  });
+}
+
+function highlightSearchInConversation(){
+  app.searchMatches = [];
+  app.activeMatchIndex = -1;
+  clearHighlights(chatList);
+  const q = searchInConv.value.trim();
+  if(!q) return;
+  const walker = document.createTreeWalker(chatList, NodeFilter.SHOW_TEXT, null);
+  const nodes = [];
+  while(walker.nextNode()) nodes.push(walker.currentNode);
+  const regex = new RegExp(q.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\$&'), 'ig');
+  nodes.forEach(node=>{
+    if(!node.nodeValue.trim()) return;
+    let match, parts = [], last=0;
+    const matches = [];
+    while((match = regex.exec(node.nodeValue)) !== null){
+      matches.push({start: match.index, end: match.index + match[0].length});
+    }
+    if(!matches.length) return;
+    const frag = document.createDocumentFragment();
+    let cursor = 0;
+    for(const m of matches){
+      if(m.start > cursor) frag.appendChild(document.createTextNode(node.nodeValue.slice(cursor, m.start)));
+      const mark = document.createElement('mark'); mark.className='app-match'; mark.textContent = node.nodeValue.slice(m.start, m.end);
+      frag.appendChild(mark);
+      app.searchMatches.push(mark);
+      cursor = m.end;
+    }
+    if(cursor < node.nodeValue.length) frag.appendChild(document.createTextNode(node.nodeValue.slice(cursor)));
+    node.parentNode.replaceChild(frag, node);
+  });
+
+  if(app.searchMatches.length){
+    app.activeMatchIndex = 0;
+    scrollToMatch(app.activeMatchIndex);
+    updateMatchFocus();
+  }
+}
+
+function navigateMatch(dir){
+  if(!app.searchMatches.length) return;
+  app.activeMatchIndex = (app.activeMatchIndex + dir + app.searchMatches.length) % app.searchMatches.length;
+  scrollToMatch(app.activeMatchIndex);
+  updateMatchFocus();
+}
+function scrollToMatch(i){
+  const el = app.searchMatches[i];
+  if(!el) return;
+  el.scrollIntoView({behavior:'smooth', block:'center'});
+}
+function updateMatchFocus(){
+  app.searchMatches.forEach((el, idx)=> el.style.background = idx === app.activeMatchIndex ? '#ffd54f' : '');
+}
+
+/* Summary update */
+function updateSummary(){
+  const totalChars = app.conversations.reduce((s,c)=> s + (c.stats?.chars || 0), 0);
+  const ai = app.conversations.reduce((s,c)=> s + (c.stats?.assistantCount || 0), 0);
+  const user = app.conversations.reduce((s,c)=> s + (c.stats?.userCount || 0), 0);
+  const tokens = app.conversations.reduce((s,c)=> s + (c.stats?.tokens || 0), 0);
+  summaryStats.textContent = `${app.conversations.length} conversations • ${totalChars} chars • AI ${ai} • User ${user} • est ${tokens} tokens`;
+}
+
+/* PDF export (multi-page) */
+async function exportConversationToPDF(conv){
+  // Create a cloned node with only content to render
+  const container = document.createElement('div');
+  container.style.width = '720px';
+  container.style.padding = '20px';
+  container.style.background = document.documentElement.classList.contains('dark') ? '#0f1113' : '#ffffff';
+  container.style.color = document.documentElement.classList.contains('dark') ? '#e6eef6' : '#111';
+  const title = document.createElement('h2'); title.textContent = conv.title; container.appendChild(title);
+
+  for(const m of conv.messages){
+    const time = document.createElement('div'); time.textContent = fmtTime(m.create_time); time.style.fontSize='12px'; time.style.color='#666';
+    const role = document.createElement('div'); role.textContent = m.role.toUpperCase();
+    const body = document.createElement('div'); body.style.margin='8px 0';
+    body.innerHTML = renderMarkdown(m.content);
+    container.appendChild(time); container.appendChild(role); container.appendChild(body);
+  }
+
+  document.body.appendChild(container);
+  const canvas = await html2canvas(container, {useCORS:true, scale:2});
+  const imgData = canvas.toDataURL('image/png');
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF('p','pt','a4');
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const imgProps = pdf.getImageProperties(imgData);
+  const imgHeight = imgProps.height * (pageWidth / imgProps.width);
+  let heightLeft = imgHeight;
+  let position = 0;
+
+  pdf.addImage(imgData, 'PNG', 0, position, pageWidth, imgHeight);
+  heightLeft -= pageHeight;
+  while(heightLeft > -1){
+    position = heightLeft - imgHeight;
+    pdf.addPage();
+    pdf.addImage(imgData, 'PNG', 0, position, pageWidth, imgHeight);
+    heightLeft -= pageHeight;
+  }
+
+  pdf.save((conv.title || 'conversation') + '.pdf');
+  container.remove();
+}
+
+/* Utility: show conversation when clicking list item is handled earlier */
+function showConversationByIndex(i){
+  showConversation(i);
+}
+
+/* Scroll buttons */
+toTopBtn.addEventListener('click', ()=> chatArea.scrollTop = 0);
+toBottomBtn.addEventListener('click', ()=> chatArea.scrollTop = chatArea.scrollHeight);
+
+/* Keyboard shortcuts for search next */
+document.addEventListener('keydown', (e)=>{
+  if((e.ctrlKey || e.metaKey) && e.key === 'f'){ e.preventDefault(); searchInConv.focus(); }
+});
+
+/* initial render (nothing) */
+renderConversationList();
+
+</script>
 </body>
 </html>
