@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>聊天記錄 — Chat Export Reader</title>
+<title>聊天記錄 — Chat Export Reader (fixed)</title>
 
 <!-- Libraries -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -20,7 +20,7 @@
     --bg: #fff7f6;
     --panel: #fff;
     --muted: #8b6b6b;
-    --primary: #FFE4E1; /* mist rose */
+    --primary: #FFE4E1;
     --accent: #FFD2D2;
     --bubble-user: #fff;
     --bubble-assistant: #fffaf0;
@@ -28,149 +28,49 @@
     --shadow: rgba(0,0,0,0.06);
     --pink-strong: #ffb3b3;
   }
-
-  /* Dark mode variables (will be toggled) */
-  .dark {
-    --bg: #0b0b0c;
-    --panel: #0f1113;
-    --muted: #9aa3b2;
-    --primary: #1b1b1d;
-    --accent: #2b2b2d;
-    --bubble-user: #15202b;
-    --bubble-assistant: #0f2330;
-    --text: #e6eef6;
-    --shadow: rgba(255,255,255,0.03);
-    --pink-strong: #ff8899;
-  }
+  .dark { --bg:#0b0b0c; --panel:#0f1113; --muted:#9aa3b2; --text:#e6eef6; --pink-strong:#ff8899; --bubble-user:#15202b; --bubble-assistant:#0f2330; --primary:#1b1b1d; --accent:#2b2b2d; --shadow:rgba(255,255,255,0.03); }
 
   html,body{height:100%;margin:0;font-family:Inter, "Segoe UI", Roboto, Arial; background:linear-gradient(180deg,var(--bg),#fff); color:var(--text);}
-
-  /* Layout */
-  .app {
-    display:flex;
-    height:100vh;
-    gap:18px;
-    padding:18px;
-    box-sizing:border-box;
-  }
-  .sidebar {
-    width:320px;
-    background:var(--panel);
-    border-radius:12px;
-    box-shadow: 0 6px 20px var(--shadow);
-    padding:12px;
-    display:flex;
-    flex-direction:column;
-    gap:8px;
-    overflow:hidden;
-  }
-  .main {
-    flex:1;
-    display:flex;
-    flex-direction:column;
-    gap:12px;
-  }
-
-  /* Header */
-  .header {
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:12px;
-  }
-  .brand {display:flex; align-items:center; gap:10px;}
-  .logo {
-    width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--accent)); display:flex; align-items:center; justify-content:center; font-weight:700; color:var(--text);
-    box-shadow: 0 4px 14px var(--shadow);
-  }
-  .title {font-weight:700;font-size:16px;}
-  .subtitle {font-size:12px;color:var(--muted);}
-
-  /* Upload area */
-  .uploader {
-    display:flex;
-    gap:8px;
-    align-items:center;
-  }
-  input[type=file] {display:none;}
-  .btn {
-    background:var(--pink-strong);
-    border:none;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600;color:var(--text);
-    box-shadow: 0 4px 12px var(--shadow);
-  }
-  .btn.ghost {background:transparent;border:1px solid rgba(0,0,0,0.06);}
-
-  /* Search */
-  .search {
-    display:flex; gap:8px; align-items:center; background:var(--panel); padding:8px; border-radius:8px;
-  }
-  .search input {border:0; outline:none; background:transparent; width:100%; color:var(--text);}
-
-  /* Sidebar conversation list */
-  .conversations {
-    overflow:auto;
-    padding:6px;
-    display:flex;
-    flex-direction:column;
-    gap:6px;
-  }
-  .conv {
-    display:flex; gap:8px; align-items:flex-start; padding:10px; border-radius:10px; cursor:pointer;
-    transition:background .12s; border:1px solid transparent;
-  }
-  .conv:hover {background:linear-gradient(90deg, rgba(255,255,255,0.6), transparent);}
-  .conv.selected {border-color:rgba(0,0,0,0.06); background:linear-gradient(90deg, rgba(255,240,240,0.5), transparent);}
-  .conv .meta {flex:1;}
-  .conv .name {font-weight:700;}
-  .conv .small {font-size:12px;color:var(--muted);}
-
-  /* Right panel */
-  .panel {
-    background:var(--panel);
-    border-radius:12px; padding:12px; box-shadow: 0 6px 20px var(--shadow); display:flex; flex-direction:column; height:100%; overflow:hidden;
-  }
-  .panel .toolbar {display:flex; gap:8px; align-items:center; justify-content:space-between;}
-  .panel .content {flex:1; overflow:auto; padding:12px; display:flex; flex-direction:column; gap:12px; scroll-behavior:smooth;}
-
-  /* Message bubbles */
-  .msg {max-width:78%; padding:10px 12px; border-radius:12px; box-shadow:0 4px 14px var(--shadow); white-space:pre-wrap; word-break:break-word;}
-  .msg.user {margin-left:auto; background:var(--bubble-user); border-top-right-radius:6px;}
-  .msg.assistant {margin-right:auto; background:var(--bubble-assistant); border-top-left-radius:6px;}
-  .msg .time {display:block;font-size:11px;color:var(--muted); margin-bottom:6px;}
-  .message-row {display:flex; flex-direction:column; gap:6px;}
-
-  /* Attachments preview */
+  .app{display:flex;height:100vh;gap:18px;padding:18px;box-sizing:border-box;}
+  .sidebar{width:320px;background:var(--panel);border-radius:12px;box-shadow:0 6px 20px var(--shadow);padding:12px;display:flex;flex-direction:column;gap:8px;overflow:hidden;}
+  .main{flex:1;display:flex;flex-direction:column;gap:12px;}
+  .header{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+  .brand{display:flex;align-items:center;gap:10px;}
+  .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--text);box-shadow:0 4px 14px var(--shadow);}
+  .title{font-weight:700;font-size:16px;}
+  .subtitle{font-size:12px;color:var(--muted);}
+  .uploader{display:flex;gap:8px;align-items:center;}
+  input[type=file]{display:none;}
+  .btn{background:var(--pink-strong);border:none;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600;color:var(--text);box-shadow:0 4px 12px var(--shadow);}
+  .btn.ghost{background:transparent;border:1px solid rgba(0,0,0,0.06);}
+  .search{display:flex;gap:8px;align-items:center;background:var(--panel);padding:8px;border-radius:8px;}
+  .search input{border:0;outline:none;background:transparent;width:100%;color:var(--text);}
+  .conversations{overflow:auto;padding:6px;display:flex;flex-direction:column;gap:6px;}
+  .conv{display:flex;gap:8px;align-items:flex-start;padding:10px;border-radius:10px;cursor:pointer;transition:background .12s;border:1px solid transparent;}
+  .conv:hover{background:linear-gradient(90deg, rgba(255,255,255,0.6), transparent);}
+  .conv.selected{border-color:rgba(0,0,0,0.06);background:linear-gradient(90deg, rgba(255,240,240,0.5), transparent);}
+  .conv .meta{flex:1;}
+  .conv .name{font-weight:700;}
+  .conv .small{font-size:12px;color:var(--muted);}
+  .panel{background:var(--panel);border-radius:12px;padding:12px;box-shadow:0 6px 20px var(--shadow);display:flex;flex-direction:column;height:100%;overflow:hidden;}
+  .toolbar{display:flex;gap:8px;align-items:center;justify-content:space-between;}
+  .panel .content{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth;}
+  .msg{max-width:78%;padding:10px 12px;border-radius:12px;box-shadow:0 4px 14px var(--shadow);white-space:pre-wrap;word-break:break-word;}
+  .msg.user{margin-left:auto;background:var(--bubble-user);border-top-right-radius:6px;}
+  .msg.assistant{margin-right:auto;background:var(--bubble-assistant);border-top-left-radius:6px;}
+  .msg .time{display:block;font-size:11px;color:var(--muted);margin-bottom:6px;}
+  .message-row{display:flex;flex-direction:column;gap:6px;}
   .attachment img{max-width:420px;border-radius:8px;display:block;margin-bottom:8px;}
   .attachment .file-link{display:inline-block;padding:6px 8px;border-radius:6px;background:rgba(0,0,0,0.03);font-size:13px;color:var(--text);text-decoration:none;margin-bottom:6px;}
-
-  /* Controls under message */
-  .msg-controls {display:flex; gap:8px; margin-top:6px;}
-  .small-btn {font-size:13px;padding:6px 8px;border-radius:8px;background:transparent;border:1px solid rgba(0,0,0,0.06);cursor:pointer;}
-
-  /* Top/bottom buttons */
-  .floats {
-    position:fixed; right:22px; bottom:22px; display:flex; flex-direction:column; gap:8px;
-  }
-  .floats button {padding:10px 12px;border-radius:999px;background:var(--pink-strong); border:none; cursor:pointer; box-shadow: 0 6px 18px var(--shadow);}
-
-  /* Custom scrollbar */
-  .conversations::-webkit-scrollbar, .panel .content::-webkit-scrollbar,
-  .sidebar::-webkit-scrollbar {width:10px; height:8px;}
-  .conversations::-webkit-scrollbar-thumb, .panel .content::-webkit-scrollbar-thumb,
-  .sidebar::-webkit-scrollbar-thumb {background:linear-gradient(180deg,var(--primary),var(--accent)); border-radius:999px; border:2px solid transparent; background-clip:padding-box;}
-
-  /* responsive */
-  @media (max-width:900px){
-    .sidebar {display:none;}
-    .app {padding:8px;}
-  }
-
-  /* highlight for search match */
-  mark.search-match { background: #fffb91; padding: 0 4px; border-radius:3px; color: inherit; }
-
-  /* small details */
-  .stats {font-size:13px;color:var(--muted); margin-top:8px;}
-  .controls-row {display:flex; gap:8px; align-items:center;}
+  .msg-controls{display:flex;gap:8px;margin-top:6px;}
+  .small-btn{font-size:13px;padding:6px 8px;border-radius:8px;background:transparent;border:1px solid rgba(0,0,0,0.06);cursor:pointer;}
+  .floats{position:fixed;right:22px;bottom:22px;display:flex;flex-direction:column;gap:8px;}
+  .conversations::-webkit-scrollbar,.panel .content::-webkit-scrollbar,.sidebar::-webkit-scrollbar{width:10px;height:8px;}
+  .conversations::-webkit-scrollbar-thumb,.panel .content::-webkit-scrollbar-thumb,.sidebar::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--primary),var(--accent));border-radius:999px;border:2px solid transparent;background-clip:padding-box;}
+  @media (max-width:900px){ .sidebar{display:none;} .app{padding:8px;} }
+  mark.search-match{ background:#fffb91;padding:0 4px;border-radius:3px;color:inherit; }
+  .stats{font-size:13px;color:var(--muted);margin-top:8px;}
+  .controls-row{display:flex;gap:8px;align-items:center;}
 </style>
 </head>
 <body>
@@ -184,7 +84,6 @@
           <div class="subtitle">Load ChatGPT export folder (conversations.json)</div>
         </div>
       </div>
-
       <div style="display:flex;gap:8px;align-items:center;">
         <label class="btn" title="Upload exported folder">
           Upload folder
@@ -209,7 +108,6 @@
     </div>
 
     <div class="conversations" id="conversationsList" aria-live="polite">
-      <!-- conversation items injected here -->
       <div style="padding:12px;color:var(--muted);">No folder loaded. Choose the exported folder above.</div>
     </div>
 
@@ -264,14 +162,11 @@
 </div>
 
 <script>
-/*
-  Chat Export Reader
-  - Parses conversations.json in an uploaded folder input (webkitdirectory)
-  - Renders conversations. Renders only role: user & assistant, skips empty content & system/tool roles
-  - Matches attachments by "<id>-<name>" in uploaded file list and displays them
-  - Exports single conversation to .txt, .pdf. Exports multiple to zip
-  - Search, highlight, next/prev in conversation
-  - Token estimate (approx): tokens ~ ceil(chars / 4)
+/* Fixed Chat Export Reader
+   - Robust role detection (m.role / m.author.role / m.author string / message.author ...).
+   - Robust text extraction from many content shapes (strings, parts, arrays, nested objects).
+   - Support mapping objects (convert mapping -> messages array).
+   - Show messages for user/assistant properly.
 */
 
 const folderInput = document.getElementById('folderInput');
@@ -296,97 +191,231 @@ const searchInConv = document.getElementById('searchInConv');
 const searchPrev = document.getElementById('searchPrev');
 const searchNext = document.getElementById('searchNext');
 
-let fileMap = new Map(); // filename -> File
-let conversations = []; // parsed conversation objects
+let fileMap = new Map();
+let conversations = [];
 let currentIndex = -1;
 let selectedConvs = new Set();
 let searchMatches = [];
 let activeMatchIndex = -1;
 
-function fmtTime(ts){
-  // Accept ISO or epoch or existing string — try to parse robustly
-  if(!ts) return '';
-  let d = new Date(ts);
-  if(isNaN(d)) {
-    // maybe it's seconds
-    const n = Number(ts);
-    if(!isNaN(n)) d = new Date(n*1000);
-    else return ts;
+function parseDateAny(ts){
+  if(!ts) return null;
+  // numbers: seconds vs ms
+  if(typeof ts === 'number'){
+    return (ts < 1e12) ? new Date(ts * 1000) : new Date(ts);
   }
-  const pad = (n)=> String(n).padStart(2,'0');
+  if(typeof ts === 'string'){
+    const s = ts.trim();
+    if(/^\d+$/.test(s)){
+      const n = Number(s);
+      return (n < 1e12) ? new Date(n * 1000) : new Date(n);
+    }
+    const d = new Date(s);
+    if(!isNaN(d)) return d;
+    // try ISO parse fallback
+    try { return new Date(Date.parse(s)); } catch(e) { return null; }
+  }
+  return null;
+}
+
+function fmtTime(ts){
+  const d = parseDateAny(ts);
+  if(!d) return '';
+  const pad = n => String(n).padStart(2,'0');
   return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
 }
 
-// Safe markdown renderer + syntax highlighting
-marked.setOptions({
-  gfm: true,
-  breaks: true,
-});
+marked.setOptions({ gfm:true, breaks:true, });
 
 function renderMarkdown(md){
   try {
     const raw = marked.parse(md || '');
     const safe = DOMPurify.sanitize(raw, {ADD_ATTR: ['target']});
-    // apply highlight.js to code blocks
     const container = document.createElement('div');
     container.innerHTML = safe;
-    container.querySelectorAll('pre code').forEach((block)=>{
-      hljs.highlightElement(block);
-    });
+    container.querySelectorAll('pre code').forEach((block)=>{ hljs.highlightElement(block); });
     return container.innerHTML;
   } catch(e){
-    return DOMPurify.sanitize(md);
+    return DOMPurify.sanitize(String(md || ''));
   }
 }
 
-function clearConversationsList(){
-  conversationsList.innerHTML = '';
+/* --- robust role detection --- */
+function getMessageRole(m){
+  if(!m) return null;
+  // direct role string
+  if(typeof m.role === 'string'){
+    const r = m.role.toLowerCase();
+    if(r.includes('user') || r.includes('human') || r.includes('person')) return 'user';
+    if(r.includes('assistant') || r.includes('bot') || r.includes('gpt')) return 'assistant';
+  }
+  // author: string or object
+  if(m.author){
+    if(typeof m.author === 'string'){
+      const a = m.author.toLowerCase();
+      if(a.includes('user') || a.includes('human')) return 'user';
+      if(a.includes('assistant') || a.includes('gpt') || a.includes('openai') || a.includes('assistant')) return 'assistant';
+    } else if(typeof m.author === 'object'){
+      if(typeof m.author.role === 'string'){
+        const r = m.author.role.toLowerCase();
+        if(r.includes('user') || r.includes('human')) return 'user';
+        if(r.includes('assistant') || r.includes('gpt')) return 'assistant';
+      }
+      if(typeof m.author.name === 'string'){
+        const n = m.author.name.toLowerCase();
+        if(n.includes('assistant') || n.includes('gpt') || n.includes('openai')) return 'assistant';
+        if(n.includes('user') || n.includes('you') || n.includes('human')) return 'user';
+      }
+    }
+  }
+  // some exports have message.author.role
+  if(m.message && m.message.author && typeof m.message.author.role === 'string'){
+    const r = m.message.author.role.toLowerCase();
+    if(r.includes('user')) return 'user';
+    if(r.includes('assistant')) return 'assistant';
+  }
+  // fallback fields
+  if(m.from && typeof m.from === 'string'){
+    const f = m.from.toLowerCase();
+    if(f.includes('user')) return 'user';
+    if(f.includes('assistant')|| f.includes('bot')) return 'assistant';
+  }
+  if(m.sender && typeof m.sender === 'string'){
+    const s = m.sender.toLowerCase();
+    if(s.includes('user')) return 'user';
+    if(s.includes('assistant') || s.includes('bot')) return 'assistant';
+  }
+  // Last-ditch: if object contains "type":"assistant" etc
+  if(m.type && typeof m.type === 'string'){
+    const t = m.type.toLowerCase();
+    if(t.includes('assistant')) return 'assistant';
+    if(t.includes('user')) return 'user';
+  }
+  return null;
 }
 
-function humanCount(n){
-  return n.toLocaleString();
+/* --- robust text/content extraction --- */
+function extractText(obj){
+  if(obj == null) return '';
+  if(typeof obj === 'string') return obj;
+  if(typeof obj === 'number') return String(obj);
+  if(Array.isArray(obj)){
+    return obj.map(item => extractText(item)).filter(Boolean).join('\n');
+  }
+  if(typeof obj === 'object'){
+    // common shapes
+    if(Array.isArray(obj.parts)) return obj.parts.map(p=>extractText(p)).join('\n');
+    if(typeof obj.text === 'string') return obj.text;
+    if(obj.content) return extractText(obj.content);
+    if(obj.message) return extractText(obj.message);
+    if(obj.items) return extractText(obj.items);
+    if(obj.elements) return extractText(obj.elements);
+    if(obj.data && obj.data.text) return obj.data.text;
+    // try common code block property
+    if(obj.html && typeof obj.html === 'string') return obj.html;
+    // fall back: join stringified leaf values
+    const vals = [];
+    for(const k of Object.keys(obj)){
+      vals.push(extractText(obj[k]));
+    }
+    return vals.filter(Boolean).join(' ');
+  }
+  return '';
 }
 
-function estimateTokensFromText(text){
-  // quick estimate: 1 token ~ 4 characters (approx for English). Round up.
-  if(!text) return 0;
-  return Math.ceil(text.length / 4);
+function getMessageText(m){
+  if(!m) return '';
+  // some messages are wrapped: message.content.parts, content.parts, text, m.content (string or array)
+  if(typeof m.content === 'string') return m.content;
+  if(m.content && Array.isArray(m.content)) return extractText(m.content);
+  if(m.content && typeof m.content === 'object') {
+    // content could be {parts: [...] } or nested shapes
+    const t = extractText(m.content);
+    if(t) return t;
+  }
+  if(m.message && m.message.content) return extractText(m.message.content);
+  if(m.text) return (typeof m.text === 'string') ? m.text : extractText(m.text);
+  // old exports: m.delta / m.output_text
+  if(m.delta) return extractText(m.delta);
+  if(m.output_text) return extractText(m.output_text);
+  // attachments-only messages might have no textual body
+  return '';
 }
 
-function computeConversationStats(conv){
-  let aiCount=0, userCount=0, chars=0, tokens=0;
-  (conv.messages||[]).forEach(m=>{
-    if(!m || !m.role || !m.content) return;
-    if(!['user','assistant'].includes(m.role)) return;
-    const text = (typeof m.content === 'string' ? m.content : (m.content?.parts ? m.content.parts.join('\\n') : JSON.stringify(m.content)));
-    if(!text || text.trim()==='') return;
-    chars += text.length;
-    tokens += estimateTokensFromText(text);
-    if(m.role === 'user') userCount++; else if(m.role === 'assistant') aiCount++;
-  });
-  return {aiCount, userCount, chars, tokens};
-}
-
+/* --- file map & attachments --- */
 function buildFileMap(fileList){
   fileMap.clear();
   for(const f of fileList){
-    // store by relative path and also by file.name
-    fileMap.set(f.webkitRelativePath || f.name, f);
+    const rel = f.webkitRelativePath || f.relativePath || f.name;
+    fileMap.set(rel, f);
     fileMap.set(f.name, f);
   }
 }
 
 function findAttachmentFile(id, name){
-  // search for `<id>-<name>` within fileMap keys
-  const target = `${id}-${name}`;
+  if(!id && !name) return null;
+  const target = id && name ? `${id}-${name}` : (name || id);
   for(const key of fileMap.keys()){
-    if(key.endsWith(target) || key === target) {
+    if(!key) continue;
+    if(key === target || key.endsWith('/' + target) || key.endsWith('\\' + target) || key.endsWith(target)) {
       return fileMap.get(key);
     }
   }
-  // fallback: maybe folder contains just name
-  if(fileMap.has(name)) return fileMap.get(name);
+  // fallback: try by name only
+  if(name && fileMap.has(name)) return fileMap.get(name);
   return null;
+}
+
+/* --- conversation parsing (robust) --- */
+function normalizeConversations(parsed){
+  let convs = [];
+  if(Array.isArray(parsed)) convs = parsed;
+  else if(parsed.conversations && Array.isArray(parsed.conversations)) convs = parsed.conversations;
+  else if(parsed.items && Array.isArray(parsed.items)) convs = parsed.items;
+  else if(parsed.results && Array.isArray(parsed.results)) convs = parsed.results;
+  else {
+    // try to collect values that look like conversations (have messages/mapping/history)
+    convs = Object.values(parsed).filter(v => v && (v.messages || v.mapping || v.items || v.history || v.conversation));
+  }
+
+  // Normalize messages shape: mapping -> array, ensure title and id
+  const normalized = convs.map((c,i) => {
+    let messages = [];
+    if(Array.isArray(c.messages)) messages = c.messages;
+    else if(Array.isArray(c.items)) messages = c.items;
+    else if(Array.isArray(c.history)) messages = c.history;
+    else if(c.mapping && typeof c.mapping === 'object') messages = Object.values(c.mapping);
+    else if(Array.isArray(c.conversation)) messages = c.conversation;
+    else messages = [];
+    const title = c.title || c.name || (c.metadata && c.metadata.title) || null;
+    const updatedAt = c.update_time || c.updatedAt || c.update || c.create_time || (c.metadata && c.metadata.updatedAt) || null;
+    const id = c.id || c.conversation_id || c.key || i;
+    return {...c, messages, title, updatedAt, id, _internalIndex: i};
+  });
+
+  return normalized;
+}
+
+/* --- UI renderers --- */
+function clearConversationsList(){ conversationsList.innerHTML = ''; }
+
+function humanCount(n){ return n.toLocaleString(); }
+
+function estimateTokensFromText(text){ if(!text) return 0; return Math.ceil(text.length / 4); }
+
+function computeConversationStats(conv){
+  let aiCount=0, userCount=0, chars=0, tokens=0;
+  (conv.messages||[]).forEach(m=>{
+    const role = getMessageRole(m);
+    if(!role) return;
+    if(!['user','assistant'].includes(role)) return;
+    const text = getMessageText(m);
+    if(!text || String(text).trim()==='') return;
+    chars += text.length;
+    tokens += estimateTokensFromText(text);
+    if(role === 'user') userCount++; else if(role === 'assistant') aiCount++;
+  });
+  return {aiCount, userCount, chars, tokens};
 }
 
 function renderConversationList(){
@@ -397,51 +426,45 @@ function renderConversationList(){
     return;
   }
 
-  // Filtering via global search
   const q = globalSearch.value.trim().toLowerCase();
   let filtered = conversations.filter(conv=>{
     if(!q) return true;
-    const title = (conv.title || conv.name || conv.metadata?.title || '').toLowerCase();
+    const title = (conv.title || '').toString().toLowerCase();
     if(title.includes(q)) return true;
-    // search messages
     for(const m of conv.messages||[]){
-      if(!m || !m.role || !['user','assistant'].includes(m.role)) continue;
-      const text = (typeof m.content === 'string' ? m.content : (m.content?.parts ? m.content.parts.join('\\n') : JSON.stringify(m.content)));
-      if(!text) continue;
-      if(text.toLowerCase().includes(q)) return true;
+      const role = getMessageRole(m);
+      if(!role) continue;
+      const text = getMessageText(m);
+      if(text && text.toLowerCase().includes(q)) return true;
     }
     return false;
   });
 
-  // sorting
   const mode = sortMode.value;
   filtered.sort((a,b)=>{
-    const aTime = a.updatedAt || a.create_time || (a.messages && a.messages[0] && (a.messages[0].create_time || a.messages[0].timestamp));
-    const bTime = b.updatedAt || b.create_time || (b.messages && b.messages[0] && (b.messages[0].create_time || b.messages[0].timestamp));
-    if(mode==='newest') return (new Date(bTime || 0)) - (new Date(aTime || 0));
-    if(mode==='oldest') return (new Date(aTime || 0)) - (new Date(bTime || 0));
-    if(mode==='az') return (''+(a.title||a.name||'')).localeCompare((''+(b.title||b.name||'')));
-    if(mode==='za') return (''+(b.title||b.name||'')).localeCompare((''+(a.title||a.name||'')));
+    const aTime = getLastMessageTime(a);
+    const bTime = getLastMessageTime(b);
+    if(mode==='newest') return (bTime || 0) - (aTime || 0);
+    if(mode==='oldest') return (aTime || 0) - (bTime || 0);
+    if(mode==='az') return (''+(a.title||'')) .localeCompare(''+(b.title||''));
+    if(mode==='za') return (''+(b.title||'')) .localeCompare(''+(a.title||''));
     return 0;
   });
 
-  // populate DOM
   filtered.forEach((conv, idx)=>{
     const item = document.createElement('div');
     item.className = 'conv';
-    if(idx === currentIndex) item.classList.add('selected');
 
     const left = document.createElement('div');
     left.style.flex='1';
     left.className='meta';
     const title = document.createElement('div');
     title.className='name';
-    title.textContent = conv.title || conv.name || ('Conversation ' + (conv.id || idx+1));
+    title.textContent = conv.title || conv.name || conv.metadata?.title || ('Conversation ' + (conv.id || idx+1));
     const small = document.createElement('div');
     small.className='small';
-    const lastMsgTime = conv.messages && conv.messages.length ? conv.messages.slice().reverse().find(m=>m && (m.role==='user' || m.role==='assistant') && m.create_time || m.timestamp || m.time) : null;
-    const tval = lastMsgTime ? (lastMsgTime.create_time || lastMsgTime.timestamp || lastMsgTime.time) : (conv.updatedAt || conv.create_time);
-    small.textContent = tval ? fmtTime(tval) : '';
+    const lastTime = getLastMessageTime(conv);
+    small.textContent = lastTime ? fmtTime(lastTime) : (conv.updatedAt ? fmtTime(conv.updatedAt) : '');
 
     left.appendChild(title);
     left.appendChild(small);
@@ -459,10 +482,8 @@ function renderConversationList(){
     item.appendChild(left);
 
     item.addEventListener('click',(e)=>{
-      // avoid clicking checkbox toggling twice
       if(e.target.tagName === 'INPUT') return;
       showConversation(conv._internalIndex);
-      // mark selected visually
       document.querySelectorAll('.conv').forEach(c=>c.classList.remove('selected'));
       item.classList.add('selected');
     });
@@ -470,7 +491,20 @@ function renderConversationList(){
     conversationsList.appendChild(item);
   });
 
-  summaryStats.textContent = `Parsed ${conversations.length} conversations. Selected: ${selectedConvs.size}.`;
+  updateSummary();
+}
+
+function getLastMessageTime(conv){
+  if(!conv || !conv.messages) return conv.updatedAt || null;
+  for(let i = conv.messages.length - 1; i >= 0; i--){
+    const m = conv.messages[i];
+    const role = getMessageRole(m);
+    const text = getMessageText(m);
+    if(role && ['user','assistant'].includes(role) && text && String(text).trim()!==''){
+      return m.create_time || m.timestamp || m.time || m.createAt || m.create_at || conv.updatedAt || null;
+    }
+  }
+  return conv.updatedAt || null;
 }
 
 function updateSummary(){
@@ -494,26 +528,43 @@ function showConversation(index){
 function renderMessages(conv){
   chatContent.innerHTML = '';
   const msgs = conv.messages || [];
-  // Filter: only role user / assistant and non-empty content
   const filtered = msgs.filter(m=>{
-    if(!m || !m.role) return false;
-    if(!['user','assistant'].includes(m.role)) return false;
-    let text = getMessageText(m);
+    const role = getMessageRole(m);
+    if(!role) return false;
+    if(!['user','assistant'].includes(role)) return false;
+    const text = getMessageText(m);
     if(!text || String(text).trim()==='') return false;
     return true;
   });
 
   if(!filtered.length){
-    chatContent.innerHTML = '<div style="color:var(--muted)">No user/assistant messages to display in this conversation.</div>';
+    // provide helpful debug info so user can inspect message shapes
+    const dbg = document.createElement('div');
+    dbg.style.color = 'var(--muted)';
+    dbg.innerHTML = `No user/assistant messages to display in this conversation. <br/><small>Tip: This viewer looks for common shapes (role/author/message.content.parts). If your export uses an unusual shape, check the raw conversation JSON for message objects. You can also open browser console (F12) to inspect parsed conversation.</small>`;
+    chatContent.appendChild(dbg);
+
+    // Add a small "inspect raw" panel so users can check what's inside (non-destructive)
+    const rawBtn = document.createElement('button');
+    rawBtn.className = 'btn';
+    rawBtn.style.marginTop='8px';
+    rawBtn.textContent = 'Inspect raw conversation';
+    rawBtn.addEventListener('click', ()=>{
+      // pretty-print some keys to console for debugging
+      console.log('Raw conversation object:', conv);
+      alert('Raw conversation dumped to browser console for inspection.');
+    });
+    chatContent.appendChild(rawBtn);
     return;
   }
 
-  // For each message create bubble
+  // render each message
   filtered.forEach((m, idx)=>{
+    const role = getMessageRole(m) || 'assistant';
     const row = document.createElement('div');
     row.className = 'message-row';
     const bubble = document.createElement('div');
-    bubble.className = 'msg ' + (m.role === 'user' ? 'user' : 'assistant');
+    bubble.className = 'msg ' + (role === 'user' ? 'user' : 'assistant');
 
     const tsString = m.create_time || m.timestamp || m.time || conv.updatedAt || conv.create_time;
     const ts = fmtTime(tsString);
@@ -522,203 +573,126 @@ function renderMessages(conv){
     time.textContent = ts;
     bubble.appendChild(time);
 
-    // attachments (for user messages with attachments)
-    if(m.role === 'user' && m.attachments && m.attachments.length){
-      m.attachments.forEach(att=>{
-        // match file in fileMap by <id>-<name> or name
-        const f = findAttachmentFile(att.id || att.id?.toString?.(), att.name || att.file_name || att.filename || '');
-        if(f){
+    // attachments variants
+    const attachments = m.attachments || m.files || m.metadata?.attachments || [];
+    if(Array.isArray(attachments) && attachments.length){
+      attachments.forEach(att=>{
+        const fileObj = findAttachmentFile(att.id || att.name || att.file_name || att.filename, att.name || att.file_name || att.filename);
+        if(fileObj){
           const reader = new FileReader();
           reader.onload = (e)=>{
             const url = e.target.result;
-            // try image
-            if(f.type && f.type.startsWith('image/')){
-              const wrap = document.createElement('div');
-              wrap.className = 'attachment';
-              const img = document.createElement('img');
-              img.src = url;
-              img.alt = att.name || f.name;
-              wrap.appendChild(img);
-              if(fileViewToggle.checked) bubble.appendChild(wrap);
+            if(fileObj.type && fileObj.type.startsWith('image/')){
+              const wrap = document.createElement('div'); wrap.className='attachment';
+              const img = document.createElement('img'); img.src = url; img.alt = att.name || fileObj.name;
+              if(fileViewToggle.checked) wrap.appendChild(img);
               else {
-                const link = document.createElement('a');
-                link.href = url;
-                link.className = 'attachment file-link';
-                link.target='_blank';
-                link.textContent = 'View ' + (att.name || f.name);
-                bubble.appendChild(link);
+                const link = document.createElement('a'); link.href = url; link.className='attachment file-link'; link.target='_blank';
+                link.textContent = 'View ' + (att.name || fileObj.name);
+                wrap.appendChild(link);
               }
+              bubble.appendChild(wrap);
             } else {
-              // generic file link
-              const link = document.createElement('a');
-              link.href = url;
-              link.className = 'attachment file-link';
-              link.download = f.name;
-              link.target = '_blank';
-              link.textContent = 'Download ' + (att.name || f.name);
+              const link = document.createElement('a'); link.href = url; link.className='attachment file-link'; link.target='_blank'; link.download=fileObj.name;
+              link.textContent = 'Download ' + (att.name || fileObj.name);
               bubble.appendChild(link);
             }
           };
-          reader.readAsDataURL(f);
+          reader.readAsDataURL(fileObj);
         } else {
-          // fallback: show name only
-          const link = document.createElement('div');
-          link.className = 'attachment file-link';
-          link.textContent = `Attachment: ${att.name || att.filename || att.file_name || '(filename missing)'}`;
-          bubble.appendChild(link);
+          const div = document.createElement('div'); div.className='attachment file-link'; div.textContent = `Attachment placeholder: ${att.name || att.filename || '(unknown)'}`;
+          bubble.appendChild(div);
         }
       });
     }
 
-    // Content display: if content is structured, try to extract text
     const contentText = getMessageText(m);
-    // If content contains markdown or code blocks, render it
     const html = renderMarkdown(contentText || '');
     const contentWrapper = document.createElement('div');
     contentWrapper.className = 'content-body';
     contentWrapper.innerHTML = html;
     bubble.appendChild(contentWrapper);
 
-    // Controls for message: download code/html etc
-    const controls = document.createElement('div');
-    controls.className = 'msg-controls';
-    const btnCopy = document.createElement('button');
-    btnCopy.className='small-btn';
-    btnCopy.textContent='Copy';
+    const controls = document.createElement('div'); controls.className='msg-controls';
+    const btnCopy = document.createElement('button'); btnCopy.className='small-btn'; btnCopy.textContent='Copy';
     btnCopy.addEventListener('click', ()=> {
-      navigator.clipboard.writeText(contentText || '').then(()=> {
-        btnCopy.textContent='Copied';
-        setTimeout(()=>btnCopy.textContent='Copy',900);
-      });
+      navigator.clipboard.writeText(contentText || '').then(()=> { btnCopy.textContent='Copied'; setTimeout(()=>btnCopy.textContent='Copy',900); });
     });
-
-    const btnDownloadRaw = document.createElement('button');
-    btnDownloadRaw.className='small-btn';
-    btnDownloadRaw.textContent='Download raw';
+    const btnDownloadRaw = document.createElement('button'); btnDownloadRaw.className='small-btn'; btnDownloadRaw.textContent='Download raw';
     btnDownloadRaw.addEventListener('click', ()=> {
-      const blob = new Blob([contentText || ''], {type:'text/plain;charset=utf-8'});
-      saveAs(blob, (conv.title || 'conversation') + '-msg-' + (idx+1) + '.txt');
+      const blob = new Blob([contentText || ''], {type:'text/plain;charset=utf-8'}); saveAs(blob, (conv.title || 'conversation') + '-msg-' + (idx+1) + '.txt');
     });
-
-    const btnDownloadCode = document.createElement('button');
-    btnDownloadCode.className='small-btn';
-    btnDownloadCode.textContent='Download code blocks';
+    const btnDownloadCode = document.createElement('button'); btnDownloadCode.className='small-btn'; btnDownloadCode.textContent='Download code blocks';
     btnDownloadCode.addEventListener('click', ()=>{
-      // extract code blocks
-      const codes = Array.from(contentWrapper.querySelectorAll('pre code')).map(c=>c.textContent || '');
-      if(!codes.length){
-        alert('No code blocks found in this message.');
-        return;
-      }
+      const codes = Array.from(contentWrapper.querySelectorAll('pre code')).map(c=>c.textContent||'');
+      if(!codes.length){ alert('No code blocks found in this message.'); return; }
       const pack = new JSZip();
       codes.forEach((c,i)=> pack.file(`code-${i+1}.txt`, c));
-      pack.generateAsync({type:'blob'}).then(b=>saveAs(b, 'code-blocks.zip'));
+      pack.generateAsync({type:'blob'}).then(b=>saveAs(b,'code-blocks.zip'));
     });
 
-    bubble.appendChild(controls);
     controls.appendChild(btnCopy);
     controls.appendChild(btnDownloadRaw);
     controls.appendChild(btnDownloadCode);
+    bubble.appendChild(controls);
 
     row.appendChild(bubble);
     chatContent.appendChild(row);
   });
 
-  // after rendering, highlight search if any
+  // highlight in-conversation search if any
   highlightSearchInConversation();
-  // scroll to bottom by default
+  // auto-scroll to bottom
   chatContent.scrollTop = chatContent.scrollHeight;
 }
 
-function getMessageText(m){
-  if(!m) return '';
-  // Chat export formats differ. Handle common shapes:
-  if(typeof m.content === 'string') return m.content;
-  // many ChatGPT exports have content:{parts: [...]}
-  if(m.content && m.content.parts && Array.isArray(m.content.parts)) return m.content.parts.join('\\n');
-  // some have text property
-  if(m.text) return (typeof m.text === 'string' ? m.text : (m.text.join ? m.text.join('\\n') : JSON.stringify(m.text)));
-  if(m.message && m.message.content && m.message.content.parts) return m.message.content.parts.join('\\n');
-  // fallback: try to stringify
-  try {
-    return JSON.stringify(m.content);
-  } catch(e){
-    return String(m.content || '');
-  }
-}
-
-/* -------- File upload handling -------- */
+/* --- Input handling and parsing --- */
 folderInput.addEventListener('change', async (e)=>{
   const files = Array.from(e.target.files || []);
   if(!files.length) return;
   buildFileMap(files);
 
-  // find conversations.json
+  // find conversations.json - try exact, then best candidate
   let convFile = null;
   for(const f of files){
-    const name = f.name.toLowerCase();
-    if(name === 'conversations.json' || name.endsWith('/conversations.json') || f.webkitRelativePath.toLowerCase().endsWith('conversations.json')){
-      convFile = f;
-      break;
-    }
-    // some exports name it conversations/messages.json etc — try contains conversations
-    if(name.includes('conversation') && name.endsWith('.json')){
-      convFile = convFile || f;
-    }
+    const p = (f.webkitRelativePath || f.name || '').toLowerCase();
+    if(p.endsWith('conversations.json') || p === 'conversations.json') { convFile = f; break; }
+  }
+  if(!convFile){
+    // fallback: look for file names containing 'conversation' and ending with .json
+    convFile = files.find(f => /conversation/i.test(f.name) && f.name.toLowerCase().endsWith('.json'));
   }
   if(!convFile){
     alert('Could not find conversations.json in the uploaded folder. Please upload the full export folder.');
     return;
   }
 
-  const text = await convFile.text();
+  let text;
+  try { text = await convFile.text(); } catch(err){ alert('Failed to read conversations.json: ' + err.message); return; }
+
   let parsed;
-  try {
-    parsed = JSON.parse(text);
-  } catch(err){
-    alert('Failed to parse conversations.json: ' + err.message);
-    return;
-  }
+  try { parsed = JSON.parse(text); } catch(err){ alert('Failed to parse conversations.json: ' + err.message); return; }
 
-  // normalise different structures: many exports have {conversations: [...]}
-  let convsRaw = [];
-  if(Array.isArray(parsed)) convsRaw = parsed;
-  else if(parsed.conversations && Array.isArray(parsed.conversations)) convsRaw = parsed.conversations;
-  else if(parsed.items && Array.isArray(parsed.items)) convsRaw = parsed.items;
-  else {
-    // maybe top-level is object with keys for each conv
-    convsRaw = Object.values(parsed).filter(v=> v && v.messages);
-  }
-
-  conversations = convsRaw.map((c,i) => {
-    // try to unify name/title and messages
-    const messages = c.messages || c.items || c.conversation || c.history || [];
-    const title = c.title || c.name || (c.metadata && c.metadata.title) || null;
-    const updatedAt = c.update_time || c.updatedAt || c.update || c.create_time || null;
-    const id = c.id || c.conversation_id || c.key || i;
-    return {...c, messages: messages, title, updatedAt, id, _internalIndex: i};
-  });
-
-  // record internal indexes for selection
+  conversations = normalizeConversations(parsed);
   conversations.forEach((c,i)=> c._internalIndex = i);
 
-  // initialize selectedConvs as empty
   selectedConvs.clear();
-
   renderConversationList();
   updateSummary();
 });
 
-/* -------- Export functions -------- */
+/* --- exports --- */
 function conversationToPlainText(conv){
   let out = '';
   const msgs = conv.messages || [];
   msgs.forEach(m=>{
-    if(!m || !m.role || !['user','assistant'].includes(m.role)) return;
+    const role = getMessageRole(m);
+    if(!role) return;
+    if(!['user','assistant'].includes(role)) return;
     const text = getMessageText(m);
     if(!text || String(text).trim()==='') return;
     const ts = fmtTime(m.create_time || m.timestamp || m.time || conv.updatedAt || conv.create_time);
-    out += `[${ts}] ${m.role.toUpperCase()}:\n${text}\n\n`;
+    out += `[${ts}] ${role.toUpperCase()}:\n${text}\n\n`;
   });
   return out;
 }
@@ -733,12 +707,11 @@ downloadTxtBtn.addEventListener('click', ()=>{
 
 downloadPdfBtn.addEventListener('click', async ()=>{
   if(currentIndex < 0) return alert('No conversation selected.');
-  // Use html2canvas to capture content and jsPDF to make PDF
   const el = chatContent;
-  // Expand view to ensure full height rendering
   const prevOverflow = el.style.overflow;
   el.style.overflow = 'visible';
-  await html2canvas(el, {scale:1.5, useCORS:true}).then(canvas=>{
+  try {
+    const canvas = await html2canvas(el, {scale:1.5, useCORS:true});
     const imgData = canvas.toDataURL('image/png');
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF('p','pt','a4');
@@ -747,9 +720,11 @@ downloadPdfBtn.addEventListener('click', async ()=>{
     const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
     pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
     pdf.save((conversations[currentIndex].title || 'conversation') + '.pdf');
-  }).catch(err=>{
+  } catch(err){
     alert('PDF generation failed: ' + err.message);
-  }).finally(()=> el.style.overflow = prevOverflow);
+  } finally {
+    el.style.overflow = prevOverflow;
+  }
 });
 
 copyConvBtn.addEventListener('click', ()=>{
@@ -762,7 +737,7 @@ copyConvBtn.addEventListener('click', ()=>{
   });
 });
 
-/* -------- Batch export (ZIP) -------- */
+/* batch zip */
 exportSelectedZip.addEventListener('click', async ()=>{
   if(selectedConvs.size === 0) return alert('No conversations selected for export.');
   const zip = new JSZip();
@@ -771,27 +746,22 @@ exportSelectedZip.addEventListener('click', async ()=>{
     const txt = conversationToPlainText(conv);
     zip.file((conv.title || 'conversation').replace(/[\\/:"*?<>|]+/g,'_') + '.txt', txt);
   }
-  // optionally attach attachments into subfolders
-  // include attachments used by selected convs
+  // include attachments
   const attachmentsAdded = new Set();
   for(const conv of selected){
     for(const m of conv.messages || []){
-      if(m.attachments && Array.isArray(m.attachments)){
-        for(const a of m.attachments){
-          const f = findAttachmentFile(a.id || a.id?.toString?.(), a.name || a.filename || a.file_name || '');
-          if(f && !attachmentsAdded.has(f.name)){
-            attachmentsAdded.add(f.name);
-            const arrayBuffer = await f.arrayBuffer();
-            zip.file('attachments/' + f.name, arrayBuffer);
-          }
+      const attachList = m.attachments || m.files || m.metadata?.attachments || [];
+      for(const a of attachList){
+        const f = findAttachmentFile(a.id || a.name || a.file_name || a.filename, a.name || a.file_name || a.filename);
+        if(f && !attachmentsAdded.has(f.name)){
+          attachmentsAdded.add(f.name);
+          const arrayBuffer = await f.arrayBuffer();
+          zip.file('attachments/' + f.name, arrayBuffer);
         }
       }
     }
   }
-
-  zip.generateAsync({type: 'blob'}).then(content => {
-    saveAs(content, 'conversations-export.zip');
-  });
+  zip.generateAsync({type: 'blob'}).then(content => saveAs(content, 'conversations-export.zip'));
 });
 
 /* select all */
@@ -808,67 +778,44 @@ selectAllBtn.addEventListener('click', ()=>{
   updateSummary();
 });
 
-/* -------- Search + highlight -------- */
-globalSearch.addEventListener('input', ()=>{
-  renderConversationList();
-});
-
+/* search */
+globalSearch.addEventListener('input', ()=> renderConversationList());
 sortMode.addEventListener('change', renderConversationList);
 
-searchInConv.addEventListener('input', ()=>{
-  highlightSearchInConversation();
-});
-
+/* in-conversation search */
+searchInConv.addEventListener('input', ()=> highlightSearchInConversation());
 searchPrev.addEventListener('click', ()=> navigateMatch(-1));
 searchNext.addEventListener('click', ()=> navigateMatch(1));
-
 
 function clearHighlights(container=document){
   container.querySelectorAll('mark.search-match').forEach(m=>{
     const text = m.textContent;
-    const node = document.createTextNode(text);
-    m.replaceWith(node);
+    m.replaceWith(document.createTextNode(text));
   });
 }
 
 function highlightSearchInConversation(){
-  searchMatches = [];
-  activeMatchIndex = -1;
+  searchMatches = []; activeMatchIndex = -1;
   clearHighlights(chatContent);
   const q = searchInConv.value.trim();
   if(!q) return;
-  const walker = document.createTreeWalker(chatContent, NodeFilter.SHOW_TEXT, {
-    acceptNode(node){
-      if(!node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
-      if(node.parentElement && ['style','script'].includes(node.parentElement.tagName.toLowerCase())) return NodeFilter.FILTER_REJECT;
-      return NodeFilter.FILTER_ACCEPT;
-    }
-  });
-
   const regex = new RegExp(q.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&'), 'ig');
+  const walker = document.createTreeWalker(chatContent, NodeFilter.SHOW_TEXT, {
+    acceptNode(node){ if(!node.nodeValue.trim()) return NodeFilter.FILTER_REJECT; if(node.parentElement && ['style','script'].includes(node.parentElement.tagName.toLowerCase())) return NodeFilter.FILTER_REJECT; return NodeFilter.FILTER_ACCEPT; }
+  });
   const textNodes = [];
-  while(walker.nextNode()){
-    textNodes.push(walker.currentNode);
-  }
+  while(walker.nextNode()) textNodes.push(walker.currentNode);
   textNodes.forEach(node=>{
-    let match;
-    const matches = [];
-    while((match = regex.exec(node.nodeValue)) !== null){
-      matches.push({index: match.index, length: match[0].length});
-    }
+    let match; const matches=[];
+    while((match=regex.exec(node.nodeValue))!==null) matches.push({index:match.index,length:match[0].length});
     if(matches.length){
-      // Replace by splitting
       const parent = node.parentNode;
-      let cursor=0;
-      const frag = document.createDocumentFragment();
-      matches.forEach((m,i)=>{
+      let cursor=0; const frag=document.createDocumentFragment();
+      matches.forEach(m=>{
         const before = node.nodeValue.slice(cursor, m.index);
         if(before) frag.appendChild(document.createTextNode(before));
-        const mark = document.createElement('mark');
-        mark.className = 'search-match';
-        mark.textContent = node.nodeValue.slice(m.index, m.index + m.length);
+        const mark = document.createElement('mark'); mark.className='search-match'; mark.textContent = node.nodeValue.slice(m.index, m.index+m.length);
         frag.appendChild(mark);
-        // store for navigation
         searchMatches.push(mark);
         cursor = m.index + m.length;
       });
@@ -877,55 +824,26 @@ function highlightSearchInConversation(){
       parent.replaceChild(frag, node);
     }
   });
-
   if(searchMatches.length){
-    activeMatchIndex = 0;
-    scrollToMatch(activeMatchIndex);
-    updateMatchFocus();
+    activeMatchIndex = 0; scrollToMatch(activeMatchIndex); updateMatchFocus();
   }
 }
 
 function navigateMatch(dir){
   if(!searchMatches.length) return;
   activeMatchIndex = (activeMatchIndex + dir + searchMatches.length) % searchMatches.length;
-  scrollToMatch(activeMatchIndex);
-  updateMatchFocus();
+  scrollToMatch(activeMatchIndex); updateMatchFocus();
 }
+function scrollToMatch(i){ const el = searchMatches[i]; if(!el) return; el.scrollIntoView({behavior:'smooth',block:'center'}); }
+function updateMatchFocus(){ searchMatches.forEach((el, idx)=> el.style.background = idx === activeMatchIndex ? '#ffd54f' : ''); }
 
-function scrollToMatch(i){
-  const el = searchMatches[i];
-  if(!el) return;
-  el.scrollIntoView({behavior:'smooth', block:'center'});
-}
-
-function updateMatchFocus(){
-  searchMatches.forEach((el, idx)=>{
-    el.style.background = idx === activeMatchIndex ? '#ffd54f' : '';
-  });
-}
-
-/* -------- Utility: show conversation by index when clicking from list ------ */
-window.showConversation = showConversation;
-
-/* -------- theme toggle ------- */
-toggleThemeBtn.addEventListener('click', ()=>{
-  document.documentElement.classList.toggle('dark');
-  toggleThemeBtn.textContent = document.documentElement.classList.contains('dark') ? 'Light' : 'Dark';
-});
-
-/* -------- scroll buttons -------- */
+/* theme & scroll */
+toggleThemeBtn.addEventListener('click', ()=>{ document.documentElement.classList.toggle('dark'); toggleThemeBtn.textContent = document.documentElement.classList.contains('dark') ? 'Light' : 'Dark'; });
 toTopBtn.addEventListener('click', ()=> chatContent.scrollTop = 0);
 toBottomBtn.addEventListener('click', ()=> chatContent.scrollTop = chatContent.scrollHeight);
 
-/* -------- helper: render built-in conversation parser on load for sample? -------- */
-// none
-
-/* -------- utility: keyboard navigation for search next/prev in conversation -------- */
-document.addEventListener('keydown',(e)=>{
-  if(e.key === 'F3' || (e.ctrlKey&&e.key==='g')) { e.preventDefault(); navigateMatch(1); }
-});
-
-/* -------- Helpers to export per-message code/html detections are above -------- */
+/* helpful exposes for debugging */
+window._debug = { getMessageRole, getMessageText, conversations, fileMap };
 
 </script>
 </body>
